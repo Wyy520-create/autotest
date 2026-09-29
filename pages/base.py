@@ -66,6 +66,11 @@ class BasePage:
         element = self.find(by, value, timeout)
         element.clear()
         element.send_keys(text)
+        # 慢环境（CI 低核 runner）下 clear+send_keys 偶发丢字符，校验后重试一次
+        if element.get_attribute("value") != text:
+            self.log.warning(f"输入校验不符，重试: {by}={value} 期望 {text!r} 实际 {element.get_attribute('value')!r}")
+            element.clear()
+            element.send_keys(text)
         self.log.info(f"输入文本: {by}={value} -> {text!r}")
 
     def text(self, by, value, timeout=10):

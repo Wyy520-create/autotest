@@ -73,5 +73,18 @@ def pytest_runtest_makereport(item, call):
         drv.save_screenshot(path)
         allure.attach.file(path, name="失败截图", attachment_type=allure.attachment_type.PNG)
         log.info(f"失败截图已保存: {path}")
+        # 失败现场取证：URL、表单实际值、页面关键标记（定位 CI 环境类问题）
+        try:
+            src = drv.page_source
+            u = drv.find_elements("id", "username")
+            p = drv.find_elements("id", "password")
+            log.info(f"[取证] URL: {drv.current_url}")
+            log.info(f"[取证] username实际值: {u[0].get_attribute('value') if u else '(页面无此元素)'}")
+            log.info(f"[取证] password实际值: {p[0].get_attribute('value') if p else '(页面无此元素)'}")
+            has_err = 'id="login-error"' in src
+            has_user = 'id="logged-user"' in src
+            log.info(f"[取证] login-error存在: {has_err} | logged-user存在: {has_user}")
+        except Exception as fe:  # noqa: BLE001
+            log.warning(f"[取证] 失败现场采集异常: {fe}")
     except Exception as e:  # noqa: BLE001
         log.error(f"失败截图保存异常: {e}")
