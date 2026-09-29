@@ -1,0 +1,82 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  api-db-test:
+    name: API + 数据库用例
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: 安装框架依赖
+        run: pip install -r requirements.txt
+
+      - name: 安装被测系统依赖
+        run: pip install -r sut/requirements.txt
+
+      - name: 启动被测系统（mini-blog）
+        run: |
+          python sut/app.py --db /tmp/blog_ci.db &
+          for i in $(seq 1 30); do
+            curl -sf http://127.0.0.1:8520/api/tags && break
+            sleep 1
+          done
+
+      - name: 运行 API + DB 用例
+        env:
+          AUTOTEST_DB_PATH: /tmp/blog_ci.db
+        run: python -m pytest -m "api or db" --reruns 1 --alluredir=reports/allure-results
+
+      - name: 上传 Allure 结果
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-results
+          path: reports/allure-results
+
+  ui-test:
+    name: UI 用例（无头 Chrome）
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: 安装框架依赖
+        run: pip install -r requirements.txt
+
+      - name: 安装被测系统依赖
+        run: pip install -r sut/requirements.txt
+
+      - name: 启动被测系统（mini-blog）
+        run: |
+          python sut/app.py --db /tmp/blog_ci.db &
+          for i in $(seq 1 30); do
+            curl -sf http://127.0.0.1:8520/api/tags && break
+            sleep 1
+          done
+
+      - name: 切换为无头浏览器
+        run: |
+          python - <<'EOF'
+          import yaml
+          with open('config/config.yaml', encoding='utf-8') as f:
+              cfg = yaml.safe_load(f)
+          cfg['browser']['headless'] = True
+          with open('config/config.yaml', 'w', encoding='utf-8') as f:
+              yaml.safe_dump(cfg, f, allow_unicode=True)
+          print('browser.headless = true')
+          EOF
+
+      - name: 运行 UI 用例
+        run: python run.py ui --reruns 1

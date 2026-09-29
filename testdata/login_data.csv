@@ -1,0 +1,4 @@
+username,password,expected
+demo_user,Demo@123,success
+demo_user,WrongPass123,fail
+ghost_user,Whatever123,fail

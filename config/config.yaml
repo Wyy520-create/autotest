@@ -1,0 +1,38 @@
+# autotest 框架配置
+# 被测系统：mini-blog（本仓库 sut/ 目录自研，Python 3.8+ 通吃，依赖仅 flask>=2.0）
+
+# 浏览器（UI 用例）
+browser:
+  name: chrome            # chrome / firefox
+  headless: false         # true 时无头运行（CI / 无显示环境建议 true）
+  implicit_wait: 5
+  page_load_timeout: 15
+  script_timeout: 15
+
+# 被测系统 Web 站点地址（UI 用例；conftest 中 base_url fixture 默认取此值）
+environment:
+  base_url: http://127.0.0.1:8520
+
+logging:
+  level: INFO   # 控制台输出级别；文件日志固定 DEBUG，写入 logs/autotest_YYYYMMDD.log
+
+screenshot:
+  save_path: ./reports/screenshots   # 失败截图目录（自动附加到 Allure 报告）
+
+api:
+  # 被测系统后端地址（mini-blog API，自研，见 sut/app.py）
+  base_url: "http://127.0.0.1:8520/api"
+  auth_type: token
+  token: ""
+  token_prefix: "Token"        # 被测系统契约：Authorization: Token <token>（Bearer 会被拒 422）
+  username: ""
+  password: ""
+  default_headers:
+    Content-Type: application/json
+    Accept: application/json
+
+database:
+  # 对接被测系统 mini-blog 的 SQLite 库（默认 sut/blog.db）；
+  # 可用环境变量 AUTOTEST_DB_PATH 覆盖（优先级高于本配置）
+  driver: sqlite
+  path: "sut/blog.db"

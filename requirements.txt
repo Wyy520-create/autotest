@@ -1,0 +1,15 @@
+# autotest 框架运行依赖（被测系统依赖见 sut/requirements.txt，仅 flask>=2.0）
+requests>=2.28
+pytest>=7.0
+selenium>=4.10
+webdriver-manager>=4.0
+allure-pytest>=2.13
+pytest-html>=4.0
+pytest-rerunfailures>=12.0
+PyYAML>=6.0
+
+# 可选：MySQL 数据库驱动（config 中 database.driver=mysql 时才需要）
+# pymysql>=1.0
+
+# 可选：性能压测（运行 performance/locustfile.py 时才需要）
+# locust>=2.15

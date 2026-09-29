@@ -1,0 +1,4 @@
+case_name,email,password,expected_status
+正确账号登录,ddt_probe@example.com,pass12345,200
+密码错误,ddt_probe@example.com,wrong_pass_123,404
+账号不存在,ddt_no_such_user@example.com,pass12345,404

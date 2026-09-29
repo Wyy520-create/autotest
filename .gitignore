@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# 测试产物
+.pytest_cache/
+logs/
+reports/
+*.log
+
+# 被测系统数据库（运行期生成）
+dev.db
+blog.db
+*.sqlite3
+*.db
+
+# IDE 与系统
+.idea/
+.vscode/
+.DS_Store
