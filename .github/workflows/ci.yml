@@ -88,12 +88,45 @@ jobs:
           print('browser.headless = true')
           EOF
 
+      - name: 浏览器连通性探针
+        run: |
+          python - <<'EOF'
+          import os, time
+          print("proxy env:", {k: v for k, v in os.environ.items() if 'proxy' in k.lower()} or "(无)")
+          import requests
+          r = requests.get("http://127.0.0.1:8520/login", timeout=5)
+          print("requests GET /login:", r.status_code, "len:", len(r.text))
+          from core.webdriver import WebDriverManager
+          m = WebDriverManager()
+          d = m.create_driver()
+          try:
+              d.set_page_load_timeout(15)
+              d.get("http://127.0.0.1:8520/login")
+              print("selenium url:", d.current_url, "| title:", d.title)
+              u = d.find_element("id", "username"); u.send_keys("probe_user")
+              p = d.find_element("id", "password"); p.send_keys("Passw0rd!")
+              print("input values:", repr(u.get_attribute("value")), repr(p.get_attribute("value")))
+              d.find_element("id", "submit").click()
+              time.sleep(2)
+              print("after submit url:", d.current_url)
+              src = d.page_source
+              print("has login-error:", 'id="login-error"' in src, "| has logged-user:", 'id="logged-user"' in src)
+              print("page source tail:", src[-300:].replace(chr(10), " "))
+          except Exception as e:
+              print("PROBE ERROR:", type(e).__name__, str(e)[:500])
+          finally:
+              m.quit_driver(d)
+          EOF
+
       - name: 运行 UI 用例
         run: python run.py ui --reruns 1
 
       - name: 失败时输出诊断信息
         if: failure()
         run: |
+          echo "===== 主机环境 ====="
+          hostnamectl 2>/dev/null | head -4 || uname -a
+          env | grep -i proxy || echo "(无 proxy 环境变量)"
           echo "===== Chrome 版本 ====="
           /tmp/cft/chrome-linux64/chrome --version || true
           echo "===== chromedriver 版本 ====="
@@ -101,6 +134,12 @@ jobs:
           echo "===== config.yaml 实际内容 ====="
           cat config/config.yaml
           echo "===== 框架运行日志 ====="
-          tail -n 80 logs/autotest.log 2>/dev/null || echo "(无日志文件)"
-          echo "===== 失败截图 ====="
-          ls -la reports/screenshots/ 2>/dev/null || echo "(无截图)"
+          tail -n 80 logs/autotest_*.log 2>/dev/null || echo "(无日志文件)"
+
+      - name: 上传失败截图
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-failure-screenshots
+          path: reports/screenshots/
+          if-no-files-found: ignore
