@@ -96,6 +96,12 @@ jobs:
           import requests
           r = requests.get("http://127.0.0.1:8520/login", timeout=5)
           print("requests GET /login:", r.status_code, "len:", len(r.text))
+          r2 = requests.post("http://127.0.0.1:8520/login",
+                             data={"username": "ghost_probe", "password": "x"},
+                             allow_redirects=False, timeout=5)
+          print("POST /login:", r2.status_code,
+                "| www-authenticate:", r2.headers.get("WWW-Authenticate", "(无)"),
+                "| has login-error:", 'id="login-error"' in r2.text)
           from core.webdriver import WebDriverManager
           m = WebDriverManager()
           d = m.create_driver()

@@ -528,7 +528,10 @@ def login_form():
     user = query_user(username=request.form.get("username", ""))
     if user and check_password_hash(user["password"], request.form.get("password", "")):
         return redirect(f"/?user={user['username']}")
-    return render_template_string(LOGIN_HTML, error="Invalid username or password"), 401
+    # 注意：页面路由失败返回 200 而非 401——服务端渲染的表单若返回 401，
+    # 浏览器会按 HTTP 认证挑战处理（弹认证框/不渲染响应体），导致错误提示不可见。
+    # API 路由（/api/users/login）的 404 缺陷契约不受影响。
+    return render_template_string(LOGIN_HTML, error="Invalid username or password")
 
 
 # ---------------------------------------------------------------------------
