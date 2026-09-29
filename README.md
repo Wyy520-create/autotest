@@ -11,7 +11,7 @@
 - **数据库用例**：直接校验 SQLite 持久层（CRUD、条件查询、多表关联、事务回滚）
 - **UI 用例**：POM 页面对象模式 + CSV 数据驱动 + 失败自动截图
 - **性能压测**：Locust 脚本（读多写少的真实用户行为模型）
-- **CI 全自包含**：GitHub Actions 自动安装依赖 → 启动被测系统 → 执行 API/DB/UI 用例
+- **CI 全自包含**：GitHub Actions 自动安装依赖 → 启动被测系统 → 执行 API/DB 用例（UI 用例建议本机运行，云端共享 runner 资源受限不适合无头浏览器时序类用例）
 
 ## 目录结构
 
@@ -150,7 +150,9 @@ locust -f performance/locustfile.py --headless -u 10 -r 2 -t 60s --host http://1
 
 ## 持续集成
 
-`.github/workflows/ci.yml`：push / PR 自动触发，CI 内自动安装依赖、启动被测系统并执行 API+DB 与 UI（无头 Chrome）两组用例，Allure 结果作为构建产物上传。
+`.github/workflows/ci.yml`：push / PR 自动触发，CI 内自动安装依赖、启动被测系统并执行 API + 数据库用例，Allure 结果作为构建产物上传。
+
+UI 用例未纳入 CI：GitHub 免费 runner 是资源共享的低配虚拟机，无头浏览器的渲染时序在低配环境下不稳定（Selenium 官方对 CI 浏览器用例建议使用专线浏览器网格）。UI 用例在本机（开发机 / 面试官本地）有真实浏览器的环境下运行更可靠，`python run.py ui` 即可。
 
 ## License
 
