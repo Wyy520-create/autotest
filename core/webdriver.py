@@ -7,6 +7,7 @@
 - 维护进程内驱动注册表，支持会话结束时统一回收（quit_all）
 """
 
+import glob
 import os
 import re
 import subprocess
@@ -92,7 +93,22 @@ class WebDriverManager:
                 if driver_version
                 else ChromeDriverManager()
             )
-            driver = webdriver.Chrome(service=ChromeService(manager.install()), options=options)
+            try:
+                chromedriver_path = manager.install()
+            except Exception as e:  # noqa: BLE001
+                # 下载失败（如离线环境）时回退到 webdriver-manager 的本地缓存。
+                # 缓存只在标准路径检测到浏览器时才命中，指定二进制时必然 miss，
+                # 因此这里显式兜底，保证离线/弱网环境可用。
+                log.warning(f"chromedriver 下载失败，尝试本地缓存兜底: {e}")
+                cached = sorted(
+                    glob.glob(os.path.expanduser("~/.wdm/drivers/chromedriver/**/chromedriver"), recursive=True),
+                    reverse=True,
+                )
+                if not cached:
+                    raise
+                chromedriver_path = cached[0]
+                log.info(f"使用缓存 chromedriver: {chromedriver_path}")
+            driver = webdriver.Chrome(service=ChromeService(chromedriver_path), options=options)
         elif name == "firefox":
             options = webdriver.FirefoxOptions()
             if headless:

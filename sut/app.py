@@ -548,7 +548,9 @@ def main():
     app.config["DB_PATH"] = args.db
     init_db()
     print(f"mini-blog SUT 已启动: http://{args.host}:{args.port}  (db: {args.db})")
-    app.run(host=args.host, port=args.port, debug=False)
+    # threaded=True：多线程处理请求，避免浏览器 keep-alive 连接占住
+    # 单线程 dev server 导致后续请求（如表单 POST）无法被 accept 的假死
+    app.run(host=args.host, port=args.port, debug=False, threaded=True)
 
 
 if __name__ == "__main__":
