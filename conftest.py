@@ -2,6 +2,7 @@
 """pytest 全局钩子与共享 fixture。"""
 
 import os
+import re
 import uuid
 
 import allure
@@ -65,7 +66,9 @@ def pytest_runtest_makereport(item, call):
         return
     try:
         os.makedirs(SCREENSHOT_DIR, exist_ok=True)
-        filename = f"{item.name}_{uuid.uuid4().hex[:6]}.png"
+        # 清洗文件名非法字符（parametrize id 可能含 []| 等），保证跨文件系统可用
+        safe_name = re.sub(r"[^\w\-.]", "_", item.name)
+        filename = f"{safe_name}_{uuid.uuid4().hex[:6]}.png"
         path = os.path.join(SCREENSHOT_DIR, filename)
         drv.save_screenshot(path)
         allure.attach.file(path, name="失败截图", attachment_type=allure.attachment_type.PNG)
