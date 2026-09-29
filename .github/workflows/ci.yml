@@ -90,3 +90,17 @@ jobs:
 
       - name: 运行 UI 用例
         run: python run.py ui --reruns 1
+
+      - name: 失败时输出诊断信息
+        if: failure()
+        run: |
+          echo "===== Chrome 版本 ====="
+          /tmp/cft/chrome-linux64/chrome --version || true
+          echo "===== chromedriver 版本 ====="
+          find ~/.wdm -type f -name chromedriver -exec {} --version \; 2>/dev/null || echo "(未找到)"
+          echo "===== config.yaml 实际内容 ====="
+          cat config/config.yaml
+          echo "===== 框架运行日志 ====="
+          tail -n 80 logs/autotest.log 2>/dev/null || echo "(无日志文件)"
+          echo "===== 失败截图 ====="
+          ls -la reports/screenshots/ 2>/dev/null || echo "(无截图)"
