@@ -51,6 +51,8 @@ autotest/
 - Python 3.8+（推荐 3.10+）
 - UI 用例需要本机安装 Chrome / Edge 浏览器（驱动由 webdriver-manager 自动下载，无需手工安装）
 
+> 提示：部分 Linux 发行版只有 `python3` 命令，下文 `python` 请视情况替换为 `python3`。
+
 ### 2. 启动被测系统
 
 Linux / macOS：
