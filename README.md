@@ -49,9 +49,11 @@ autotest/
 ### 1. 环境要求
 
 - Python 3.8+（推荐 3.10+）
-- UI 用例需要本机安装 Chrome / Edge 浏览器（驱动由 webdriver-manager 自动下载，无需手工安装）
+- UI 用例需要本机安装 **Chrome 或 Firefox 任一浏览器**（驱动由 webdriver-manager 自动下载，无需手工安装）；无显示环境（CI / SSH）请把 `config/config.yaml` 的 `browser.headless` 改为 `true`
 
 > 提示：部分 Linux 发行版只有 `python3` 命令，下文 `python` 请视情况替换为 `python3`。
+>
+> Linux 注意：Ubuntu 的 Firefox 是 snap 包，在容器 / 受限 shell 中可能因 snap 权限无法启动；此时推荐安装 Chrome，或用环境变量 `AUTOTEST_CHROME_BINARY` 指向一个独立的 Chrome for Testing 二进制。
 
 ### 2. 启动被测系统
 
@@ -115,6 +117,14 @@ allure serve reports/allure-results
 | `api.base_url` | 被测系统 API 地址 |
 | `api.token_prefix` | 鉴权头前缀，mini-blog 契约为 `Token` |
 | `database.path` | SQLite 库文件，默认 `sut/blog.db`；可用环境变量 `AUTOTEST_DB_PATH` 覆盖 |
+
+环境变量汇总：
+
+| 变量 | 作用 |
+| --- | --- |
+| `AUTOTEST_DB_PATH` | 覆盖数据库文件路径（CI 中指向独立测试库） |
+| `AUTOTEST_BASE_URL` | 覆盖被测系统 Web 地址 |
+| `AUTOTEST_CHROME_BINARY` | 指定 Chrome 二进制路径（snap 受限环境 / 多版本共存时使用） |
 
 ## 被测系统 mini-blog
 

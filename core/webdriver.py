@@ -8,6 +8,9 @@
 """
 
 import os
+import re
+import subprocess
+import tempfile
 
 import yaml
 from selenium import webdriver
@@ -71,13 +74,37 @@ class WebDriverManager:
             options.add_argument("--no-sandbox")
             options.add_argument("--disable-dev-shm-usage")
             options.add_argument("--window-size=1440,900")
-            driver = webdriver.Chrome(
-                service=ChromeService(ChromeDriverManager().install()), options=options
+            # 支持通过环境变量指定浏览器二进制（如 snap 受限环境下的独立 Chrome）
+            chrome_binary = os.environ.get("AUTOTEST_CHROME_BINARY")
+            driver_version = None
+            if chrome_binary:
+                options.binary_location = chrome_binary
+                # webdriver-manager 在标准路径外检测不到版本，直接解析二进制版本号
+                try:
+                    out = subprocess.check_output([chrome_binary, "--version"], text=True)
+                    match = re.search(r"(\d+\.\d+\.\d+\.\d+)", out)
+                    driver_version = match.group(1) if match else None
+                except Exception as e:  # noqa: BLE001
+                    log.warning(f"解析 Chrome 版本失败，将下载最新驱动: {e}")
+                log.info(f"使用指定 Chrome 二进制: {chrome_binary}")
+            manager = (
+                ChromeDriverManager(driver_version=driver_version)
+                if driver_version
+                else ChromeDriverManager()
             )
+            driver = webdriver.Chrome(service=ChromeService(manager.install()), options=options)
         elif name == "firefox":
             options = webdriver.FirefoxOptions()
             if headless:
                 options.add_argument("--headless")
+            # 独立 profile 目录，两个目的：
+            # 1. 避免与桌面已运行的 Firefox 实例发生单实例委托冲突
+            # 2. 目录放 $HOME 下 —— snap 打包的 Firefox 有文件系统隔离，看不到 /tmp
+            profile_root = os.path.expanduser("~/.cache/autotest/ff_profiles")
+            os.makedirs(profile_root, exist_ok=True)
+            profile_dir = tempfile.mkdtemp(prefix="profile_", dir=profile_root)
+            options.add_argument("-profile")
+            options.add_argument(profile_dir)
             driver = webdriver.Firefox(
                 service=FirefoxService(GeckoDriverManager().install()), options=options
             )

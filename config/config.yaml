@@ -3,7 +3,7 @@
 
 # 浏览器（UI 用例）
 browser:
-  name: chrome            # chrome / firefox
+  name: chrome           # chrome / firefox
   headless: false         # true 时无头运行（CI / 无显示环境建议 true）
   implicit_wait: 5
   page_load_timeout: 15
