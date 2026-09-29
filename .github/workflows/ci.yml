@@ -70,7 +70,8 @@ jobs:
 
       - name: 启动被测系统（mini-blog）
         run: |
-          python sut/app.py --db /tmp/blog_ci.db &
+          # 输出重定向到文件，供失败诊断步骤回读 Flask 逐请求日志（含状态码）
+          python sut/app.py --db /tmp/blog_ci.db > /tmp/sut.log 2>&1 &
           for i in $(seq 1 30); do
             curl -sf http://127.0.0.1:8520/api/tags && break
             sleep 1
@@ -141,6 +142,8 @@ jobs:
           cat config/config.yaml
           echo "===== 框架运行日志 ====="
           tail -n 80 logs/autotest_*.log 2>/dev/null || echo "(无日志文件)"
+          echo "===== SUT 逐请求日志（Flask，含状态码） ====="
+          cat /tmp/sut.log 2>/dev/null || echo "(无 SUT 日志)"
 
       - name: 上传失败截图
         if: failure()

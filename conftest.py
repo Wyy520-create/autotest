@@ -84,6 +84,26 @@ def pytest_runtest_makereport(item, call):
             has_err = 'id="login-error"' in src
             has_user = 'id="logged-user"' in src
             log.info(f"[取证] login-error存在: {has_err} | logged-user存在: {has_user}")
+            # 浏览器控制台日志（headless Chrome 会记录网络层错误，如 net::ERR_*）
+            try:
+                for entry in drv.get_log("browser")[-8:]:
+                    log.info(f"[取证] browser日志: {entry.get('level')} | {str(entry.get('message'))[:200]}")
+            except Exception as be:  # noqa: BLE001
+                log.warning(f"[取证] browser日志采集异常: {be}")
+            # 在页面上下文同步重放 POST /login：验证失败瞬间服务端可达且响应正常，
+            # 从而把「服务端问题」与「浏览器表单提交问题」彻底分开
+            try:
+                xhr = drv.execute_script(
+                    "var x = new XMLHttpRequest();"
+                    "x.open('POST', '/login', false);"
+                    "x.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');"
+                    "x.send('username=forensic_probe&password=x');"
+                    "return x.status + ' | len=' + x.responseText.length"
+                           " + ' | login-error=' + (x.responseText.indexOf('login-error') > -1);"
+                )
+                log.info(f"[取证] 页面内XHR重放POST /login: {xhr}")
+            except Exception as xe:  # noqa: BLE001
+                log.warning(f"[取证] XHR重放异常: {xe}")
         except Exception as fe:  # noqa: BLE001
             log.warning(f"[取证] 失败现场采集异常: {fe}")
     except Exception as e:  # noqa: BLE001
