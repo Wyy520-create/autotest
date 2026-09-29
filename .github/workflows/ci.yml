@@ -58,6 +58,16 @@ jobs:
       - name: 安装被测系统依赖
         run: pip install -r sut/requirements.txt
 
+      # 使用与本机验证一致的 Chrome for Testing 固定版本，
+      # 通过框架支持的 AUTOTEST_CHROME_BINARY 指定，驱动版本按二进制精确匹配，
+      # 避免 runner 预装 Chrome 版本随机导致驱动错位
+      - name: 安装 Chrome for Testing
+        run: |
+          wget -q https://storage.googleapis.com/chrome-for-testing-public/154.0.8037.57/linux64/chrome-linux64.zip
+          unzip -q chrome-linux64.zip -d /tmp/cft
+          /tmp/cft/chrome-linux64/chrome --version
+          echo "AUTOTEST_CHROME_BINARY=/tmp/cft/chrome-linux64/chrome" >> "$GITHUB_ENV"
+
       - name: 启动被测系统（mini-blog）
         run: |
           python sut/app.py --db /tmp/blog_ci.db &
